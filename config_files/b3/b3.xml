@@ -1,0 +1,38 @@
+<configuration>
+  <settings name="b3">
+    <set name="parser">iourt41</set>
+    <!-- /!\ adapt MySQL password for the b3 user -->
+    <set name="database">mysql://b3:__b3_password__@localhost/b3</set>
+    <set name="bot_name">b3</set>
+    <set name="bot_prefix">^0(^2b3^0)^7:</set>
+    <set name="time_format">%I:%M%p %Z %m/%d/%y</set>
+    <set name="time_zone">CST</set>
+    <!-- 9 = verbose, 10 = debug, 21 = bot, 22 = console -->
+    <set name="log_level">9</set>
+    <set name="logfile">/var/log/urbanterror/b3.log</set>
+  </settings>
+  <settings name="server">
+    <set name="punkbuster">off</set>
+    <set name="rcon_password">yourpasswordhere</set><!-- /!\ see server.cfg -->
+    <set name="port">27960</set>
+    <set name="game_log">/var/log/urbanterror/urt.log</set>
+    <set name="public_ip">xx.yy.zz.tt</set><!-- /!\ see server.cfg -->
+    <set name="rcon_ip">xx.yy.zz.tt</set><!-- /!\ see server.cfg -->
+  </settings>
+  <settings name="messages">
+    <set name="kicked_by">%s^7 was kicked by %s^7 %s</set>
+    <set name="kicked">%s^7 was kicked %s</set>
+    <set name="banned_by">%s^7 was banned by %s^7 %s</set>
+    <set name="banned">%s^7 was banned %s</set>
+    <set name="temp_banned_by">%s^7 was temp banned by %s^7 for %s^7 %s</set>
+    <set name="temp_banned">%s^7 was temp banned for %s^7 %s</set>
+    <set name="unbanned_by">%s^7 was un-banned by %s^7 %s</set>
+    <set name="unbanned">%s^7 was un-banned %s</set>
+  </settings>
+  <settings name="plugins">
+    <set name="external_dir">/home/urbanterror/b3/extplugins</set>
+  </settings>
+  <plugins>
+    <plugin name="admin" priority="1"  config="/home/urbanterror/b3/conf/plugin_admin.xml"/>
+  </plugins>
+</configuration>

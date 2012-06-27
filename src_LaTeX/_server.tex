@@ -1,0 +1,188 @@
+%=======================================================================
+% File         : _server.tex
+% Title        : 
+% Author(s)    : Sebastien VARRETTE <Sebastien.Varrette@uni.lu>
+% Creation     : 06 Jul 2009
+% Time-stamp:    <2009-07-15 14:23:18 svarrette>
+% $Id: _server.tex 447 2009-07-15 13:36:11Z svarrette $
+% 
+%   Copyright (c) 2009 Sebastien Varrette. 
+%
+% Licence: Creative Commons Attribution-Noncommercial-Share Alike 2.0 France
+%
+% You are free:
+%   - to Share:  to copy, distribute and transmit the work
+%   - to Remix: to adapt the work
+%
+% Under the following conditions:
+%   - Attribution : You must attribute the work in the manner specified by the
+%                   author or licensor (but  not in any way that suggests that
+%                   they endorse you or your use of the work).  
+%   - Noncommercial:  You may not use this work for commercial purposes.
+%   - Share Alike: If you alter, transform, or build upon this work, you may
+%                  distribute the resulting work only under the same or similar
+%                  license to this one. 
+%
+% With the understanding that:
+%   - Waiver: Any of the above conditions can be waived if you get permission from
+%             the copyright holder. 
+%   - Other Rights: In no way are any of the following rights affected by the
+%                   license:  
+%                    * Your fair dealing or fair use rights;
+%                    * Apart from the remix rights granted under this license,
+%                      the author's moral rights; 
+%                     * Rights other persons may have either in the work itself
+%                       or in how the work is used, such as publicity or privacy
+%                       rights. 
+%   - Notice:  For any reuse or distribution, you must make clear to others the
+%              license terms of this work. The best way to do this is with a
+%              link to this web page. 
+%=======================================================================
+
+%------------------------------
+\subsection{Basic installation}
+\label{sec:server:install}
+
+This section describes the installation of a server under a Linux Debian
+machine. 
+First proceed to the Linux installation as stated in \S\ref{sec:urt_client}. 
+Then create a dedicated user (\texttt{urbanterror}) for running the server,
+attached to the group \texttt{urt}: 
+\begin{lstlisting}[style=command]
+[root@host]# adduser --system --ingroup urt urbanterror
+\end{lstlisting}
+The next step is to make this user owning the files coming with Urban Terror,
+and creating the directory storing the logs and the pid files: 
+\begin{lstlisting}[style=command]
+[root@host]# chown -R urbanterror:urt /usr/local/games/urbanterror
+[root@host]# mkdir /var/log/urbanterror /var/run/urbanterror
+[root@host]# chown urbanterror:urt /var/log/urbanterror /var/run/urbanterror
+[root@host]# ln -s ~urbanterror/.q3a/q3ut4/urt.log  /var/log/urbanterror/urt.log
+\end{lstlisting}
+
+As the server will be launched under the rights of the \texttt{urbanterror}
+user, the log files of the server will be located  in
+\verb!~urbanterror/.q3a/q3ut4/urt.log!. 
+Le last instruction creates a symbolic link for the future log file of the
+server in a more convenient place. 
+
+\noindent You now have to decide about which server executable you want to use (either 32
+bits \texttt{ioUrTded.i386} or 64 bits \texttt{ioUrTded.x86\_64}), make it
+executable and create the link to it. 
+It follows that for running a 32 bits executable, you will typically run the
+following commands: 
+\begin{lstlisting}[style=command]
+[root@host]# cd /usr/local/games/urbanterror
+[root@host]# chmod +x  ioUrTded.i386
+[root@host]# ln -s ioUrTded.i386 urbanterror.server  
+\end{lstlisting}
+
+\noindent If you followed exactly this tutorial, the configuration file of the server
+resides in  
+\texttt{/usr/local/games/urbanterror/q3ut4/server.cfg}. 
+It is nicely commented so you shouldn't have trouble to adapt it to reflect your
+own configuration. 
+Yet here are the variables you should pay attention: 
+\begin{lstlisting}[style=urtcfg]
+sets " Admin" "yourname" 
+sets " Email" "xxx@xxx.xxx"
+
+set sv_hostname "your server name, by xxx" 
+set g_motd "Your stats on xxx" //Your message of the day here, 
+set sv_joinmessage "Welcome to Urban Terror 4.1"  //Your joinmessage here
+
+sets sv_dlURL "urt.unfoog.de" // use this server instead of teh default one
+
+set g_gametype "8" // default to bomb mode ;)
+
+set rconpassword "xxx" //Password to control the server remotely using rcon.
+
+set sv_master2 ""  // leave those empty to prevent notifications of master 
+set sv_master3 ""  // servers about your server. 
+set sv_master4 ""
+
+set g_log "urt.log" // name of the log file
+//*** B3 Specific settings ***
+set g_logSync "3"     //XLR: Unbuffered/direct logging for B3
+set sv_zombietime "6" //XLR: Larger zombietime to reduce slot/client mixups for B3
+set g_loghits "1" //XLR: headshotcounter and XLRstats bodypart information for B3
+\end{lstlisting}
+
+The \texttt{server.cfg} I'm currently using for my own server is proposed in
+appendix~\ref{anx:server.cfg}, page~\pageref{anx:server.cfg}\\
+
+Now you should be able to start the server. On Debian, you should be addicted to
+have a script for startup in the directory \texttt{/etc/init.d/}.
+It appeared difficult to find one so I made one proposed in
+appendix~\ref{anx:init.d:urbanterror} page~\pageref{anx:init.d:urbanterror}. 
+Put this script in the folder \texttt{/etc/init.d/}, make it
+executable (\texttt{chmod +x /etc/init.d/urbanterror}). You can now start the
+server by issuing the command: 
+\begin{lstlisting}[style=command]
+[root@host]# /etc/init.d/urbanterror start
+\end{lstlisting}
+
+Now your server is running and should be seen from the client software of your
+network. Check that you can play on the server, vote to cycle, change map etc. 
+Once ensured that the server is working fine, you can continue to
+section~\ref{sec:b3} to configure Big Brother Bot and make your server even more  
+powerful. 
+
+%--------------------------------------------------------------------------
+\subsection{Installing new maps and adapting the \texttt{mapcycle.txt} file}
+\label{sec:server:new:map}
+
+To install a new map on your server, you have several steps to do: 
+\begin{enumerate}
+\item copy the map file (typically \texttt{ut4\_mapname.pk3}) into the folder\\
+  \texttt{/usr/local/games/urbanterror/q3ut4/}; 
+\item ensure the map file is available for auto-download on the server you
+  configured with the directive \texttt{sv\_dlURL} in \texttt{server.cfg} (see
+  \S\ref{sec:server:install});
+\item adapt your \texttt{mapcycle.txt} file to include your new map in the map
+  list (see my script \texttt{createmapcycles.sh} below);
+\item change the \texttt{map} directive at the end of your \texttt{server.cfg}
+  to  \texttt{ut4\_mapname} (remove the extension) such that n restart, the new
+  map will be proposed directly;
+\item restart the server by issuing the following command: 
+  \begin{lstlisting}[style=command]
+    [root@host]# /etc/init.d/urbanterror restart
+  \end{lstlisting}
+\end{enumerate}
+
+\noindent To automatically handle new maps and randomizing the maps in the
+\texttt{mapcycle.txt} file, I wrote two scripts: 
+\begin{itemize}
+\item \texttt{createmapcycles.sh}, to be put together with the file
+  \texttt{mapcycle.txt.orig} in the directory
+  \texttt{/usr/local/urbanterror/q3ut4/} (both proposed in
+  appendix~\ref{anx:mapcycle:all} page~\pageref{anx:mapcycle:all}). \\
+  This script is responsible for creating a file named \texttt{mapcycle.txt.all}
+  listing the default maps (taken from \texttt{mapcycle.txt.orig}) and all newly
+  added maps (detecting by a simple \texttt{ls} command on the files in the
+  directory with format \texttt{ut4\_*}).
+\item \texttt{randomize\_mapcycle.pl} that randomizes the entries of a file
+  listing the maps to be put in the final \texttt{mapcycle.txt}. 
+  This Perl script should be placed in the directory
+  \texttt{/usr/local/urbanterror/q3ut4/}.  
+\end{itemize}
+ 
+The first script (\texttt{createmapcycles.sh}) is typically launched once for
+each newly installed map, \emph{i.e.} between the steps 4 and 5 described at the
+beginning of this section. 
+
+On the contrary, the second script is typically launched every time the server
+is started. If you want to activate this feature, simply uncomment the line
+defining the variable \texttt{MAPCYCLE\_RANDOMIZE\_SCRIPT} in the startup script
+proposed in appendix~\ref{anx:init.d:urbanterror}.
+
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% eof
+%
+% Local Variables:
+% fill-column: 80
+% mode: latex
+% mode: flyspell
+% mode: auto-fill
+% End:
