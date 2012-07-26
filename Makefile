@@ -1,7 +1,7 @@
 ##################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
 # Creation : 26 Jul 2012
-# Time-stamp: <Thu 2012-07-26 11:51 svarrette>
+# Time-stamp: <Thu 2012-07-26 11:57 svarrette>
 #
 # Copyright (c) 2012 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #               http://varrette.gforge.uni.lu
@@ -110,6 +110,7 @@ start_bump_major:
 release: $(URT_GUIDE)
 	@cp $(URT_GUIDE) $(URT_GUIDE:%.pdf=%-v$(VERSION).pdf)
 	git flow release finish -s $(VERSION)
+	git push origin
 	git push origin --tags
 endif
 
