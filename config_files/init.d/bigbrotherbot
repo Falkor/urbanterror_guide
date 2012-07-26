@@ -1,0 +1,157 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          BigBrotherBot
+# Required-Start:    $local_fs 
+# Required-Stop:     $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      S 0 1 6
+# Short-Description: BigBrotherBot
+# Description:       BigBrotherBot
+### END INIT INFO
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+DESC="BigBrotherBot"
+NAME=bigbrotherbot
+SCRIPTNAME=/etc/init.d/$NAME
+DAEMON=`which python`
+DAEMON_USER=urbanterror
+DAEMON_GROUP=urt
+
+B3_BASEDIR=/usr/bin
+B3_CONFIGFILE="/home/urbanterror/b3/conf/b3.xml"
+
+DAEMON_ARGS="$B3_BASEDIR/b3_run -c $B3_CONFIGFILE"
+
+B3_PID_FILE="/var/run/urbanteror/${NAME}.pid"
+
+
+# Exit if the package is not installed
+if [ ! -x "$DAEMON" ]; then
+    {
+        echo "Couldn't find $DAEMON"
+        exit 99
+    }
+fi
+
+PIDDIR=`dirname "$B3_PID_FILE"`
+if [ "$PIDDIR" -a "$PIDDIR" != "/var/run" ] ; then
+    [ ! -d "$PIDDIR" ] && mkdir "$PIDDIR"
+    [ "$DAEMON_USER" ] && chown "$DAEMON_USER" "$PIDDIR"
+    [ "$DAEMON_GROUP" ] && chgrp "$DAEMON_GROUP" "$PIDDIR"
+fi
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
+. /lib/lsb/init-functions
+
+#
+# Function that check the daemon/service
+#
+do_status()
+{
+    NB_PROCESS=`ps ax | grep b3_run | grep "$B3_CONFIGFILE" | grep -v grep | wc -l`
+    if [ $NB_PROCESS -gt 1 ]; then
+        log_warning_msg "WARNING: $NAME is running multiple times"
+        return 0
+    elif [ $NB_PROCESS -eq 1 ]; then
+      	log_success_msg "$NAME is running" 
+        return 0
+    else
+     	log_success_msg "$NAME is stopped"
+        return 1
+    fi
+}
+
+#
+# Function that starts the daemon/service
+#
+do_start()
+{
+   # Return
+   #   0 if daemon has been started
+   #   1 if daemon was already running
+   #   2 if daemon could not be started
+    start-stop-daemon --start --quiet --chuid $DAEMON_USER:$DAEMON_GROUP \
+	--pidfile $B3_PID_FILE --make-pidfile \
+	--background --chdir $B3_BASEDIR --startas $DAEMON -- $DAEMON_ARGS
+    return $?
+}
+
+#
+# Function that stops the daemon/service
+#
+do_stop()
+{
+   # Return
+   #   0 if daemon has been stopped
+   #   1 if daemon was already stopped
+   #   2 if daemon could not be stopped
+   #   other if a failure occurred
+    start-stop-daemon --stop --signal 15 --retry 5 --quiet --pidfile $B3_PID_FILE
+    RETVAL="$?"
+    [ "$RETVAL" = 0 ] && rm -f $B3_PID_FILE
+    [ "$RETVAL" = 2 ] && return 2
+    return "$RETVAL"
+}
+
+do_kill() {
+    while [ 1 ]; do
+        PID=`ps hax | grep "b3_run" | grep "$B3_CONFIGFILE" | grep -v grep | cut -d' ' -f1 | head -n1`
+        [ "$PID" = "" ] && return
+        log_daemon_msg "killing process [$PID]"
+        kill -9 $PID
+    done
+}
+
+case "$1" in
+    start)
+	log_daemon_msg "Starting $DESC" "$NAME"
+	do_start
+	case "$?" in
+	    0|1) log_end_msg 0 ;;
+	    2)  log_end_msg 1 ;;
+	esac
+	do_status
+	;;
+    stop)
+	log_daemon_msg "Stopping $DESC" "$NAME"
+	do_stop
+	case "$?" in
+	    0|1) log_end_msg 0 ;;
+	    2) log_end_msg 1 ;;
+	esac
+	;;
+    status)
+	do_status
+	;;
+    kill)
+	log_daemon_msg "Killing all process b3_run using $B3_CONFIGFILE"
+	do_kill
+	log_end_msg 0
+	;;
+    restart|force-reload)
+	log_daemon_msg "Restarting $DESC" "$NAME"
+	do_stop
+	case "$?" in
+	    0|1)
+		do_start
+		case "$?" in
+		    0) log_end_msg 0 ;;
+		    1) log_end_msg 1 ;; # Old process is still running
+		    *) log_end_msg 1 ;; # Failed to start
+		esac
+		do_status
+		;;
+	    *)
+        # Failed to stop
+		log_end_msg 1
+		;;
+	esac
+	;;
+    *)
+	echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+	exit 3
+	;;
+esac
+
+:

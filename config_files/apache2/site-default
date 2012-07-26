@@ -1,0 +1,64 @@
+# To be placed and adapted in /etc/apache2/site-available/default
+
+NameVirtualHost xx.yy.zz.tt:80
+NameVirtualHost xx.yy.zz.tt:443
+
+ServerAdmin Your.Mail@domain.com
+ServerName  myurtserver.domain.com
+
+<Directory />
+        Options FollowSymLinks
+        AllowOverride None
+</Directory>
+
+<Directory /var/www/>
+        Options Indexes FollowSymLinks MultiViews
+        AllowOverride None
+	Order Deny,Allow
+        Deny from all
+        Allow from your.ip.adress.here
+        # This directive allows us to have apache2's default start page
+        # in /apache2-default/, but still have / go to the right place
+        #RedirectMatch ^/$ /apache2-default/
+</Directory>
+
+<Directory "/usr/lib/cgi-bin">
+        AllowOverride None
+        Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
+        Order allow,deny 
+        Allow from all
+</Directory>
+
+<Directory /var/www/phpmyadmin/>
+        # Restrict phpmyadmin access to just my workstation
+        Order Deny,Allow
+        Deny from all
+        Allow from your.ip.adress.here
+</Directory>
+
+<VirtualHost xx.yy.zz.tt:80>
+        SSLEngine Off
+        # Automatically redirect to https
+       	RewriteEngine on 
+	RewriteRule ^/(.*)$ https://%{SERVER_NAME}/$1 [R=permanent] 
+
+	ErrorLog /var/log/apache2/error.log
+        # Possible values include: debug, info, notice, warn, error, crit, alert, emerg.
+        LogLevel warn
+        CustomLog /var/log/apache2/access.log combined
+        ServerSignature Off
+</VirtualHost>
+
+<VirtualHost xx.yy.zz.tt:443>
+        SSLEngine  On
+        DocumentRoot /var/www/
+        #### PhpMyAdmin ####
+        Alias /phpmyadmin 	/var/www/phpmyadmin/
+
+        ErrorLog /var/log/apache2/error.log
+        # Possible values include: debug, info, notice, warn, error, crit, alert, emerg.
+        LogLevel warn
+        CustomLog /var/log/apache2/access.log combined
+        ServerSignature Off
+</VirtualHost>
+

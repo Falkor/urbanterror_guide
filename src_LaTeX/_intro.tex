@@ -1,0 +1,140 @@
+%=======================================================================
+% File         : _intro.tex
+% Title        : 
+% Author(s)    : Sebastien VARRETTE <Sebastien.Varrette@uni.lu>
+% Creation     : 06 Jul 2009
+% Time-stamp:    <Thu 2012-07-26 11:34 svarrette>
+%  
+%   Copyright (c) 2009 Sebastien Varrette. 
+%
+% Licence: Creative Commons Attribution-Noncommercial-Share Alike 2.0 France
+%
+% You are free:
+%   - to Share:  to copy, distribute and transmit the work
+%   - to Remix: to adapt the work
+%
+% Under the following conditions:
+%   - Attribution : You must attribute the work in the manner specified by the
+%                   author or licensor (but  not in any way that suggests that
+%                   they endorse you or your use of the work).  
+%   - Noncommercial:  You may not use this work for commercial purposes.
+%   - Share Alike: If you alter, transform, or build upon this work, you may
+%                  distribute the resulting work only under the same or similar
+%                  license to this one. 
+%
+% With the understanding that:
+%   - Waiver: Any of the above conditions can be waived if you get permission from
+%             the copyright holder. 
+%   - Other Rights: In no way are any of the following rights affected by the
+%                   license:  
+%                    * Your fair dealing or fair use rights;
+%                    * Apart from the remix rights granted under this license,
+%                      the author's moral rights; 
+%                     * Rights other persons may have either in the work itself
+%                       or in how the work is used, such as publicity or privacy
+%                       rights. 
+%   - Notice:  For any reuse or distribution, you must make clear to others the
+%              license terms of this work. The best way to do this is with a
+%              link to this web page. 
+%=======================================================================
+
+Urban Terror (UrT for short) started as a realism mod for Quake III Arena,
+reusing most of the concepts of the famous game Counterstrike~\cite{cs}.
+The approach is similar to the one proposed by the Tactical Ops\footnote{See
+\url{http://www.tactical-ops.de/}} mod for Unreal Tournament.
+Yet with the release of the Quake III engine as an open-source software (through
+the \texttt{ioquake3} project~\cite{ioq3}), Urban Terror is now completely free,
+stand-alone (\emph{i.e.} it does not require to buy a copy of Quake III Arena)
+and, more importantly, cross-platform so it can run on Windows \windows, Linux
+\linux\ and Mac OS X \macosx.    
+\\
+The software package in itself comes with two elements: 
+\begin{enumerate}\setitemsep
+\item the client executable \texttt{ioUrbanTerror} for playing on a remote
+  dedicated server. It is also possible to start a server at the same time you
+  play to host a game and let other player join your game other the network;
+\item a dedicated server executable \texttt{ioUrTded}.
+\end{enumerate}
+
+Whereas the UrT client can start a server, you have  access in this case to
+limited functionality (in particular no votes) and performances (as your machine
+also have to handle the graphics of your own game in addition to the server
+tasks), which justify the configuration of a dedicated server. \\
+
+This guide is based on my own experience to share information about the
+configuration of a dedicated server for Urban Terror over a Linux machine
+(hosting a Debian distribution).
+I also detail the configuration of Big Brother Bot, a powerful and flexible
+server administration package for online games which support in particular UrT. 
+It permits the use of various plugins, in particular \texttt{xlrstats}, which
+give access to statistics to the players of your server. 
+The configuration of such plugins is also addressed by this document. \\
+
+This document is not meant to be a reference guide (for this, just consider the
+official manuals that come with each package), I just found it would be
+interesting to centralize in a single document my notes for configuring each
+elements. 
+It is released under the terms of the CC licence Creative Commons
+\emph{Attribution-Noncommercial-Share Alike} 2.0 France, hoping other persons
+will help me to improve this document. \\
+Your help, comments and feedback will be greatly appreciated ! Kindly address
+them by mail at \url{Sebastien.Varrette@uni.lu}. 
+The \LaTeX\ sources of this tutorial can also be obtained, as soon as you
+ask them by mail at the same address. 
+
+\paragraph{Writing conventions.}
+
+When editing this document, I used several writing conventions summarized here: 
+\begin{itemize}
+\item An item preceded by an OS symbol (\windows, \linux\ or \macosx) qualify
+  information specific to this OS; 
+\item Command-lines are provided in a dedicated environment (grey boxes)
+  prefixed by a prompt. 
+  This prompt can be of two types: 
+  \begin{enumerate}
+  \item 
+    \begin{lstlisting}[style=command]
+ [user@host]>
+    \end{lstlisting}
+    This qualify a command that can be run with the rights of a normal user.
+  \item
+    \begin{lstlisting}[style=command]
+ [root@host]#
+    \end{lstlisting}
+    This refers to a command to be run with superuser right (aka \texttt{root})
+    - use \texttt{su} or \texttt{sudo} commands to switch to this mod
+    eventually (see the man pages for more information).
+  \end{enumerate}
+Remember that this prompt is of course not part of the command provided. 
+\end{itemize}
+
+\paragraph{Organization.}
+
+This tutorial is organized as follows: 
+\S\ref{sec:urt_client} details the installation of the client software provided
+by the Urban Terror package. Information for all OS are given and a brief
+summary of some common game techniques are provided. 
+Some advanced customization tricks (by adapting the \texttt{q3config.cfg} file)
+are also given.  
+Then \S\ref{sec:urt_server} expounds the configuration of a running dedicated
+server for Urban Terror on a Linux machine. In particular, some useful scripts
+(for instance to start/stop the server) are proposed. 
+\S\ref{sec:b3} is dedicated to Big Brother Bot (B3). At this level, the
+configuration of several plugins (\texttt{xlrstats} for instance) is detailed.  
+
+\paragraph{Online repository.}
+
+The latest version of this document is available on my personal web site 
+\url{http://varrette.gforge.uni.lu/q3ut4/urt_setup.pdf}\\
+The scripts provided in the appendix are available for download at the following url: 
+\url{http://varrette.gforge.uni.lu/q3ut4/ConfigFiles/}\\
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% eof
+%
+% Local Variables:
+% fill-column: 80
+% mode: latex
+% mode: flyspell
+% mode: auto-fill
+% End:

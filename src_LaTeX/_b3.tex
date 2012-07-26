@@ -1,0 +1,623 @@
+%=======================================================================
+% File         : _b3.tex
+% Title        : 
+% Author(s)    : Sebastien VARRETTE <Sebastien.Varrette@uni.lu>
+% Creation     : 06 Jul 2009
+% Time-stamp:    <Thu 2012-07-26 11:35 svarrette>
+%   
+%   Copyright (c) 2009 Sebastien Varrette. 
+%
+% Licence: Creative Commons Attribution-Noncommercial-Share Alike 2.0 France
+%
+% You are free:
+%   - to Share:  to copy, distribute and transmit the work
+%   - to Remix: to adapt the work
+%
+% Under the following conditions:
+%   - Attribution : You must attribute the work in the manner specified by the
+%                   author or licensor (but  not in any way that suggests that
+%                   they endorse you or your use of the work).  
+%   - Noncommercial:  You may not use this work for commercial purposes.
+%   - Share Alike: If you alter, transform, or build upon this work, you may
+%                  distribute the resulting work only under the same or similar
+%                  license to this one. 
+%
+% With the understanding that:
+%   - Waiver: Any of the above conditions can be waived if you get permission from
+%             the copyright holder. 
+%   - Other Rights: In no way are any of the following rights affected by the
+%                   license:  
+%                    * Your fair dealing or fair use rights;
+%                    * Apart from the remix rights granted under this license,
+%                      the author's moral rights; 
+%                     * Rights other persons may have either in the work itself
+%                       or in how the work is used, such as publicity or privacy
+%                       rights. 
+%   - Notice:  For any reuse or distribution, you must make clear to others the
+%              license terms of this work. The best way to do this is with a
+%              link to this web page. 
+%=======================================================================
+
+Big Brother Bot B3~\cite{b3} is a complete and total server administration
+package for online games. 
+B3 is based on the analysis of the log files populated by a running server. 
+It means that as soon as B3 is able to parse and interpret the logs of a given
+game, this game is supported. This is the case for Urban Terror. 
+The main interest of B3 resides in the fact that the administrations tasks are
+handled by plugins written by the community yet with a common interface and
+installation procedure. This makes B3 very flexible and easy to use. 
+
+I detail here the configuration of B3 on your Linux server, assuming you
+followed the instructions proposed in the previous section.
+
+Note that your main source of information should be the official guidelines
+provided at the following url:\\ 
+\url{http://wiki.github.com/BigBrotherBot/big-brother-bot/installation}
+
+If you experience any problem, don't hesitate to use B3 forum available at 
+\url{http://www.bigbrotherbot.com/forums} 
+
+%--------------------------
+\subsection{Prerequisites}
+\label{sec:b3:prerequisite}
+
+Several components are required before installing B3 in itself: 
+\begin{itemize}
+\item A MySQL server and therefore PhPMyAdmin and a Web server (the later being
+  mandatory for \texttt{xlrstats}).
+  Under Debian, just run: 
+  \begin{lstlisting}[style=command]
+[root@host]# apt-get install apache2 mysql-server phpmyadmin
+[root@host]# ln -s /usr/share/phpmyadmin/ /var/www/phpmyadmin
+  \end{lstlisting}
+  For the configuration, see below. 
+\item some Python stuff (\url{http://www.python.org}), more particularly: 
+  Python 2.3+, Elementtree, Python-MySQL and Python Setuptools. Under Debian,
+  simply run: 
+  \begin{lstlisting}[style=command]
+[root@host]# apt-get install python2.5 python-elementtree \ 
+             python-mysqldb python-setuptools
+  \end{lstlisting}
+\end{itemize}
+
+%.....................................
+\subsubsection{Web server configuration}
+\label{sub:b3:apache}
+
+As you plan to use phpMyAdmin, it is mandatory to activate SSL support for the
+Web server, which means you will have to create a certificate for it.
+This requires \texttt{OpenSSL} so install it: 
+  \begin{lstlisting}[style=command]
+[root@host]# apt-get install openssl
+  \end{lstlisting}
+
+Then get the fully qualified host name of the server (run \texttt{hostname -f}
+typically), or use the future url of your server. 
+In the sequel, I'll assume the server to be reached by the name
+\texttt{myurtserver.domain.com}. 
+To create the certificates (valid for 1414 days), run:  
+  \begin{lstlisting}[style=command]
+[root@host]# cd /etc/apache2/
+[root@host]# mkdir ssl.key ssl.crt ssl.crl
+[root@host]# chmod 700 ssl.key
+[root@host]# openssl req -new -x509 -days 1414 -nodes \ 
+   -keyout /etc/apache2/ssl.key/server.key -out /etc/apache2/ssl.crt/server.crt \ 
+   -subj '/O=COM/OU=DOMAIN/CN=myurtserver.domain.com'
+  \end{lstlisting}
+I don't know how familiar you are with SSL certification, yet you should adapt
+the subject of the certificate (precised with \texttt{-subj}) to reflect your
+own structure (for the \texttt{O}rganization name (\texttt{COM} here) and your
+\texttt{O}rganization \texttt{U}nit name (\texttt{DOMAIN} here). The critical
+point is to place your server fully qualified name as \texttt{C}ommon
+\texttt{N}ame.
+For more information, read the \texttt{README} file coming with apache2: 
+\begin{lstlisting}[style=command]
+  [root@host]# zless /usr/share/doc/apache2.2-common/README.Debian.gz
+\end{lstlisting}
+
+This creates a self-signed certificate \texttt{/etc/apache2/ssl.crt/server.crt}
+and the associated private key \texttt{/etc/apache2/ssl.crt/server.key}. 
+Now you should notify the SSL module of Apache about the location of those
+certificates. 
+Edit \texttt{/etc/apache2/mods-available/ssl.conf} and add/update the
+properties as follows: 
+\begin{lstlisting}[style=apachecfg]
+<IfModule mod_ssl.c>
+  ...
+  # The certificates of the server to use
+  SSLCertificateFile      /etc/apache2/ssl.crt/server.crt
+  SSLCertificateKeyFile   /etc/apache2/ssl.key/server.key
+  ...
+</IfModule>
+\end{lstlisting}
+Now comment the \texttt{NameVirtualHost} directive in \texttt{/etc/apache2/ports.conf}.
+Then activate the SSL module (together with the rewrite one): 
+\begin{lstlisting}[style=command]
+[root@host]#  a2enmod ssl
+[root@host]#  a2enmod rewrite
+\end{lstlisting}
+
+\noindent You should now update the file configuring the web server by editing
+the file \texttt{/etc/apache2/site-available/default} as follows:  
+\lstinputlisting[caption=The \texttt{/etc/apache2/site-available/default}
+configuration file for your Apache server,style=apachecfg,basicstyle=\scriptsize]{../config_files/apache2/site-default}
+
+\noindent Now start the web server by running:
+\begin{lstlisting}[style=command]
+[root@host]# apache2ctl restart
+\end{lstlisting}
+(You can also use "\texttt{/etc/init.d/apache2 restart}"). Check that the server
+works by opening a browser in the url \url{http://myurtserver.domain.com}. 
+You should be automatically redirect to the url
+\url{https://myurtserver.domain.com}.  
+
+%.....................................
+\subsubsection{MySQL configuration}
+\label{sub:b3:mysql}
+
+Assuming the MySQL server to be running (\texttt{/etc/init.d/mysql restart}
+eventually), you should be able also to use PHPMyAdmin by accessing to the url 
+\url{https://myurtserver.domain.com/phpmyadmin/}.
+Note that the server is configured the authorize the access to this interface
+only for the machine with the IP address \texttt{your.ip.adress.here} according
+to configuration of the Apache server (see \S\ref{sub:b3:apache}). 
+In case of trouble, your very first reflex (as always) is to check the problem
+in the logs. To check them online, run in a separate terminal (CTRL-C to quit): 
+\begin{lstlisting}[style=command]
+[root@host]# tail -f /var/log/apache2/error.log
+\end{lstlisting}
+
+In all case, once you're able to interact with the MySQL server, your very first
+task is to setup a root password for it (blank by default). 
+Prefer using PHPMyAdmin for that (go to the Privilege section) or run the
+following command (just ensure you flush by after the history of the commands to
+avoid password retrieval -- this is not perfect but a minimum security measure):
+\begin{lstlisting}[style=command]
+[root@host]# mysqladmin -u root password "your_password_here"
+[root@host]# history -c
+\end{lstlisting}
+
+Using PHPMyAdmin, create a MySQL user \texttt{b3} (generate a random password
+for him and keep it in a safe place such as an encrypted file) with full right
+on a database named \texttt{b3}. 
+Create also a MySQL user \texttt{b3\_ro} with read-only access to the database
+\texttt{b3} (\emph{i.e.} with privileges limited to the \texttt{SELECT}
+command). Again, generate a random password for him and keep it in a safe
+place. 
+In the sequel, I'll assume those users to be configured as follows: 
+\begin{itemize}\setitemsep
+\item MySQL user \texttt{b3}: password \texttt{\_\_b3\_password\_\_};
+\item MySQL user \texttt{b3\_ro}: password \texttt{\_\_b3\_ro\_password\_\_}.
+\end{itemize}
+ 
+%--------------------------
+\subsection{B3 installation}
+\label{sec:b3:install}
+
+You are now ready to install B3 (When writing this tutorial, the latest release
+of B3 was the version 1.1.4b). 
+Simply run:
+\begin{lstlisting}[style=command]
+[root@host]# easy_install -U b3
+\end{lstlisting}
+\emph{Note:} this will install b3 in the following directory: \\
+\texttt{/usr/lib/python2.5/site-packages/b3-1.1.4b-py2.5.egg/b3} \\
+In the sequel and to make things simpler (and shorter), I will refer to this
+directory as \begginstall.
+
+%...................................
+\subsubsection{Preparing the database}
+\label{sec:b3:dbsetup}
+
+Retrieve the file \begginstall\texttt{/doc/b3.sql} from the server (typically
+using \texttt{scp}). 
+Then, use PHPMyAdmin to connect to the database \texttt{b3} (created during the process
+described in \S\ref{sub:b3:mysql}) as user \texttt{b3}.
+Select the menu \texttt{Import}, then choose the previously retrieved file,
+\texttt{b3.sql} and finally click on \texttt{Go}. 
+This should populate the database \texttt{b3} with the tables required by Big
+Brother Bot.  
+
+%...........................
+\subsubsection{B3 Configuration}
+\label{sec:b3:config}
+
+Create the directory structure for hosting the B3 configuration as follows: 
+\begin{lstlisting}[style=command]
+[root@host]# mkdir ~urbanterror/b3
+[root@host]# cd ~urbanterror/b3
+[root@host]# mkdir -p conf extplugins/conf init.d plugins_toinstall
+[root@host]# cp $B3_EGG_INSTALLDIR/conf/* ~urbanterror/b3/conf/
+[root@host]# ln -s /var/log/urbanterror/b3.log b3.log
+[root@host]# chown -R urbanterror:urt ~urbanterror/b3
+\end{lstlisting}%$
+
+The main configuration file for B3 is named \texttt{b3.xml} and is located in
+the directory \texttt{/home/urbanterror/b3/conf/}. 
+Edit and adapt it as the one proposed in appendix~\ref{anx:b3:b3.xml}
+page~\pageref{anx:b3:b3.xml}. 
+In particular, it is very important to disable PunkBuster otherwise you will get
+the error message "\emph{[pm] Please try your command after you have been
+  authenticated}" when playing on the server and trying to register.
+
+The configuration proposed in appendix~\ref{anx:b3:b3.xml} activate a single
+plugin called \texttt{admin}. 
+This is for a first check and we will see later how to add and activate new
+plugins. 
+
+The only step missing for the installation is a startup script to manage B3 
+\texttt{/etc/init.d/bigbrotherbot}.  
+Mine is proposed in appendix~\ref{anx:init.d:b3} page~\pageref{anx:init.d:b3}.  
+Assuming your UrT server is running (\emph{i.e.} the log files are populated),
+you should be able to launch b3 as follows: 
+\begin{lstlisting}[style=command]
+[root@host]# /etc/init.d/bigbrotherbot start
+\end{lstlisting}
+
+To check this is working, connect to the server and once in the game, type as a
+message \verb/!register/. This will register yourself in B3 (assuming your
+player name is \texttt{Toto}, you should receive as an answer in the console the
+fact that \texttt{Toto} has been put in the \texttt{User} group. 
+In all case, detect the anomalies by monitoring the log files of b3 and running
+in a separate terminal:
+\begin{lstlisting}[style=command]
+[root@host]# tail -f /var/log/urbanterror/b3.log
+\end{lstlisting}
+
+\noindent 
+You shall now familiarize yourself with the commands available under B3 with the
+plugin \texttt{admin}. 
+For this, you shall refer to the official manual available at: 
+\texttt{http://wiki.github.com/BigBrotherBot/big-brother-bot/manual-commands}\\
+
+You will notice that each command comes with a level to authorize or not the
+access to the command. 
+To make yourself admin of B3 (\emph{i.e.} able to launch all commands), the best
+is to update the table \texttt{clients} in the \texttt{b3} database. 
+Locate the entry with your player name (field \texttt{name}). 
+The value associated to your name in the \texttt{group\_bits} fields should be
+1. This translate the fact that you have been put in the User group. 
+Change this value to 128 to make you an admin of B3. 
+%
+You might want to delegate some administration tasks to other players. 
+For this, make their \texttt{group\_bits} to 20 typically. 
+
+%--------------------------------------------
+\subsection{Configuring the default plugins}
+\label{sec:b3:plugins}
+
+B3 comes with a few plugins more or less relevant for Urban Terror summarized in
+Table~\ref{tab:b3:plugins}. 
+\begin{table}[ht]
+  \centering\small
+  \begin{tabular}{|c|p{0.8\textwidth}|}
+    \hline
+    \texttt{admin} & Provides the majority of B3 functionality such as kicking,
+    banning, user management, and warnings\\
+    \texttt{adv} & Advertise messages periodically\\
+    \texttt{censor} & Warn users when using banned words\\
+    \texttt{stats} & Simple transient stats that track stats while the users
+    is connected\\ 
+    \texttt{pingwatch} & Warn users for high/low pings and kick when the ping
+    goes to high\\ 
+    \texttt{spamcontrol} & Warn users for saying too many messages in a short
+    period of time\\ 
+    \texttt{status} &  Dumps an XML file to the server periodically with B3 and
+    user information to be used on your website to display game status \\
+    \texttt{tk} & Monitors team damage and team kills\\ 
+    \texttt{welcome} &Welcome messages for new and returning users\\\hline 
+  \end{tabular}
+  \caption{Default plugins proposed with Big Brother Bot}
+  \label{tab:b3:plugins}
+\end{table}
+
+\noindent Until now, B3 is configured with the \texttt{admin} plugin enabled. 
+Before going further, a few elements should be known about the plugins for B3:
+\begin{itemize}
+\item A given plugin \texttt{toto} is written in Python in a file named
+  \texttt{toto.py}. This file is located in \begginstall\texttt{/plugins/} (this
+  holds for the default plugins).
+  On startup, B3 eventually compile this plugin to generate a new file
+  \texttt{toto.pyc} for a more efficient execution. 
+  Therefore if for any reason you decide to modify the source file of a plugin,
+  remember to delete the compiled file before restarting B3. Otherwise your
+  modification won't be taken into account.
+  You may claim you will nether modify plugins sources files, yet it may happens
+  if you want to change the position in the screen where a given message is
+  displayed. You can alter this location as follows:
+  \begin{itemize}
+  \item Upper left (server announce area): 
+    \texttt{self.console.write('blabla')} or \texttt{self.console.broadcast('blabla')}
+  \item Lower left (chat area): \texttt{self.console.say('blabla')}
+  \item Center screen (Big text): \texttt{self.console.write('bigtext blabla')}
+  \end{itemize}
+
+
+
+\item A given  plugin \texttt{toto} comes with a configuration file
+  \texttt{plugins\_toto.xml} that respects the following format: 
+  \begin{lstlisting}[language=xml,numbers=none,]
+<configuration plugin="toto">
+  ...
+</configuration>    
+  \end{lstlisting}
+  This configuration files is located by default in \begginstall\texttt{/conf/}
+  yet remember that I preferred to put the default configurations files in    
+  \texttt{/home/urbanterror/b3/conf/}.
+  Actually, the exact location of plugins configuration files is specified by
+  the \texttt{config} attribute of the \texttt{plugin} anchor used in the
+  configuration file \texttt{b3.xml}.
+\item External plugins are handled in a separate directory, either in the
+  default location \begginstall\texttt{/extplugins/} or, in the hierarchy
+  proposed in this document, in \texttt{/home/urbanterror/b3/extplugins/}.\\
+  This directory will contain the Python sources files of the plugins together
+  with a sub-directory \texttt{conf/} which host the plugins configuration
+  files.
+\item Activating a plugin is done through the configuation file \texttt{b3.xml} in
+  the \texttt{plugins} section.  
+  Each plugin is characterized by a name, a unique priority value (within the
+  list of your plugins) and a path to
+  the configuration file as follows: 
+  \begin{lstlisting}[style=apachecfg]
+<plugins>
+   <plugin name="plugin_name" priority="n"  config="/path/to/plugin_conf.xml"/>
+</plugins>
+  \end{lstlisting}
+  The name provided should correspond to the basename of the Python source file
+  (without the extension \texttt{.py}).  
+  B3 will search for such a file in the default installation directory
+  (\emph{i.e.} \begginstall\texttt{/}), then in the default external plugin
+  directory (\emph{i.e.}  \begginstall\texttt{/extplugins/}) and finally in a
+  user-defined external directory specified in a \texttt{settings} section of
+  \texttt{b3.xml}. \\
+  For instance, in the configuration files proposed in
+  appendix~\ref{anx:b3:b3.xml}, we setup this external directory to
+  \texttt{/home/urbanterror/b3/extplugins} as follows:
+  \begin{lstlisting}[style=apachecfg]
+<settings name="plugins">
+   <set name="external_dir">/home/urbanterror/b3/extplugins</set>
+</settings>
+  \end{lstlisting}
+  Note that when specifying the path to the plugin configuration file, you can
+  use the sequence \texttt{@b3/} to refer to \begginstall\texttt{/}. 
+\end{itemize}
+
+\noindent You can now activate one of the default plugins summarized in the
+table~\ref{tab:b3:plugins}.  For instance to activate the plugin
+\texttt{welcome}: 
+\begin{enumerate}\setitemsep
+\item Examine \texttt{/home/urbanterror/b3/conf/plugin\_welcome.xml} to
+  eventually adapt the configuration to suits your needs;
+\item Select a priority value $n$ (3 in the sequel) and add a new
+  \texttt{plugin} anchor in the \texttt{plugins} section of \texttt{b3.xml}:
+  \begin{lstlisting}[style=apachecfg]
+<plugins>
+   ...
+   <plugin name="welcome" priority="3" 
+           config="/home/urbanterror/b3/conf/plugin_welcome.xml"/>
+</plugins>
+  \end{lstlisting}
+\item Restart B3:
+\begin{lstlisting}[style=command]
+[root@host]# /etc/init.d/bigbrotherbot restart
+\end{lstlisting}
+\end{enumerate}
+
+%--------------------------------------------------------------------------
+\subsection{General procedure to install third party plugins}
+\label{sec:b3:extplugins}
+
+The flexibility of B3 permits the availability of various third party plugins. 
+You will find them in the \texttt{Plugins/Releases} section of the Big Brother Bot forum
+(indeed a very nice source of info for you): 
+\begin{center}
+  \url{http://www.bigbrotherbot.com/forums/index.php?board=17.0}
+\end{center}
+
+\noindent 
+On this page, you should find a list of released plugins, each of them coming
+with a short description, a download location and an install guide. 
+You shall always refer to the install guide yet here is the general procedure to
+install and configure a third plugin. 
+To make this procedure concrete, I'll illustrate it on the \texttt{heashotsurt}
+plugin (version \texttt{0.2.0}) which counts the number of headshot kills made
+by the players: 
+\begin{enumerate}
+\item Download the plugin sources \texttt{heashotsurt-v0.2.0.zip} and unzip this
+  file into the folder:\\
+  \texttt{/home/urbanterror/b3/plugins\_toinstall/heashotsurt-v0.2.0}
+\item Copy (or make a symbolic link of) the Python source file
+  \texttt{heashotsurt.py} into the external plugin directory 
+  \texttt{/home/urbanterror/b3/extplugins/}
+\item Copy (or make a symbolic link of) the  configuration file
+  \texttt{headshots.xml} into the  external plugin configuration directory\\ 
+  \texttt{/home/urbanterror/b3/extplugins/conf/}
+\item As for default plugins, select a unique priority value $n$ (14 for
+  instance) and add a new \texttt{plugin} anchor in the \texttt{plugins} section
+  of \texttt{b3.xml}:
+  \begin{lstlisting}[style=apachecfg]
+   <plugin name="headshotsurt" priority="14"  
+           config="/home/urbanterror/b3/extplugins/conf/headshots.xml"/>
+  \end{lstlisting}
+\item Restart B3:
+\begin{lstlisting}[style=command]
+[root@host]# /etc/init.d/bigbrotherbot restart
+\end{lstlisting}
+\end{enumerate}
+
+\noindent This procedure holds for most of the external plugins. 
+I personally installed in this way the following plugins: 
+\begin{itemize}\setitemsep
+\item \texttt{PowerAdminUrt} (version \texttt{1.4.0b3})\\
+  {\small \url{http://www.bigbrotherbot.com/forums/index.php?topic=426.0}}\\
+  Remember to edit the file \texttt{extplugins/conf/poweradminurt.xml} and
+  disable the \texttt{rotationmanager} by putting the value False as follows:
+  \begin{lstlisting}[style=apachecfg]
+<settings name="rotationmanager">
+    <!-- enable the rotationmanager? -->
+    <set name="rm_enable">False</set>
+    ...
+</settings> 
+ \end{lstlisting}
+\item \texttt{headshotsurt} (version \texttt{0.2.0}) \\ 
+  {\small \url{http://www.bigbrotherbot.com/forums/index.php?topic=367.0}}
+\item \texttt{topkiller} (version \texttt{1.0.4})\\
+  {\small\url{http://www.bigbrotherbot.com/forums/index.php?topic=574.0}}
+\item \texttt{Spree} (version \texttt{1.1})\\
+  {\small\url{http://www.bigbrotherbot.com/forums/index.php?topic=864.0}}
+\end{itemize}
+
+I now dedicated a full section to one of the most interesting external plugin
+which comes with B3: \texttt{xlrstats}
+
+%--------------------------------------------------------------------------
+\subsection{Installing XLRstats}
+\label{sec:b3:xlrstats}
+
+XLRstats (\url{http://www.xlrstats.com/}) is a statistics plugin for
+BigBrotherBot (B3) and it stores all kill-events in the MySQL database used by
+B3.
+Stats are available in real time in the game using the \texttt{!xlrstats} command in
+chat, but much more can be viewed in the XLRstats webfront (such as weapon
+usage, ranks, medals etc.).
+The sources of the plugin are part of B3 installation (we won't touch them). 
+You still need to download the following elements (put them
+into \verb!~urbanterror/b3/plugins_toinstall/!):
+\begin{itemize}\setitemsep
+\item The latest webfront \texttt{xlrstats-web-v2} (version 2.0.6), available on\\
+ \url{http://github.com/xlr8or/xlrstats-web-v2/tree};
+\item The image pack for UrT (\texttt{xlrstats-imagepack-urt}), to get from\\
+  \url{http://xlr8or.snt.utwente.nl/forum/index.php?action=downloads}. 
+\end{itemize}
+
+\noindent 
+You first need to create the extra tables in the \texttt{b3} database. 
+The procedure is similar to the one explained in \S\ref{sec:b3:dbsetup}, this
+time using the file present in the sub-directory 
+\texttt{xlrstats-web-v2/xlrstats/sql/xlrstats.sql}
+
+\noindent 
+Once this is done, two B3 plugins should be installed: 
+\begin{enumerate}
+\item \texttt{status}, one of the default plugins (see \S\ref{sec:b3:plugins}). \\
+  Just edit \texttt{/home/urbanterror/b3/conf/plugin\_status.xml} as follows:
+  \begin{lstlisting}[style=apachecfg]    
+<configuration plugin="status">
+	<settings name="settings">
+		<set name="interval">60</set>
+		<set name="output_file">/var/www/status.xml</set>
+	</settings>
+</configuration>
+  \end{lstlisting}
+  This will configure the plugin to populate the file
+  \texttt{/var/www/status.xml} for which the web server should have read
+  access. In this purpose, run the following commands: 
+  \begin{lstlisting}[style=command]
+[root@host]# touch /var/www/status.xml
+[root@host]# chown urbanterror:www-data /var/www/status.xml
+[root@host]# chmod 644 /var/www/status.xml
+  \end{lstlisting}
+\item the \texttt{ctime} plugin that comes with XLRStats webfront in
+  the zip file \texttt{b3-plugins/ctime.zip}. Once unpacked, 
+  create the extra tables in the \texttt{b3} database using the
+  \texttt{ctime.sql} file (re-use the procedure proposed in
+  \S\ref{sec:b3:dbsetup}). 
+  Then configure the plugin as explained in \S\ref{sec:b3:extplugins}.
+\end{enumerate}
+
+\noindent As always, the plugins are enabled in B3 as soon as you add them in the
+\texttt{plugins} section of \texttt{b3.xml} (just adapt the priority values eventually): 
+  \begin{lstlisting}[style=apachecfg]
+<plugins>
+   ...
+   <plugin name="xlrstats" priority="2"  config="@b3/extplugins/conf/xlrstats.xml"/>
+   ...
+   <plugin name="status" priority="10"  
+           config="/home/urbanterror/b3/conf/plugin_status.xml"/>
+   <plugin name="ctime"  priority="11"
+           config="/home/urbanterror/b3/extplugins/conf/plugin_ctime.xml"/>
+   ...
+</plugins>
+  \end{lstlisting}
+
+\noindent 
+Restart B3 and ensure everything is working correctly (check the log file \\
+\texttt{/var/log/urbanterror/b3.log} eventually). 
+Now we can setup the webfront (take a look at \url{http://www.xlrstats.com/} for
+the reference webfront documentation). 
+First copy the files of the webfront into a more convenient place:
+\begin{lstlisting}[style=command]
+[root@host]# cd /home/urbanterror/b3/plugins_toinstall/xlrstats-web-v2/xlrstats
+[root@host]# cp -r xlrstats /usr/share/
+[root@host]# cd ../../
+[root@host]# cp -r xlrstats-imagepack-urt/images/* /usr/share/xlrstats/images/
+[root@host]# chown -R urbanterror:www-data /usr/share/
+[root@host]# chmod -R g+r /usr/share/xlrstats
+[root@host]# ln -s /usr/share/xlrstats/ /var/www/xlrstats
+\end{lstlisting}
+
+\noindent 
+Then make the folders \texttt{dynamic} and \texttt{config} writable by the
+webserver:
+\begin{lstlisting}[style=command]
+[root@host]# chmod 770 /var/www/xlrstats/dynamic
+[root@host]# chmod 770 /var/www/xlrstats/config
+\end{lstlisting}
+
+\noindent 
+Update \texttt{/etc/apache2/sites-available/default} to include
+the \texttt{xlrstats} directory (typically to limit access to it to a few IP addresses):
+\begin{lstlisting}[style=apachecfg]
+<Directory /var/www/xlrstats/>
+        Order Deny,Allow
+        Deny from all
+	Allow from 127.0.0.1
+        Allow from toto.ip.address
+	Allow from tata.ip.address	
+</Directory>
+
+<VirtualHost xx.yy.zz.tt:443>
+        ...
+        Alias /stats  /var/www/xlrstats
+        ...
+</VirtualHost>
+
+\end{lstlisting}
+Finally restart the web server: 
+\begin{lstlisting}[style=command]
+[root@host]# apache2ctl restart
+\end{lstlisting}
+
+\noindent 
+Now go to the url \url{http://myurtserver.domain.com/stats/install/}
+Select "\emph{Start Install}", then "\emph{Next}". 
+In the "MySQL Connection Settings" panel, enter the following configuration (adapt the password): 
+\begin{itemize}\setitemsep
+\item Host name: \texttt{localhost}
+\item MySQL Username : \texttt{b3\_ro}
+\item MySQL Password: \texttt{\_\_b3\_ro\_password\_\_}
+\item MySQL Database Name: \texttt{b3}
+\end{itemize}
+In the "Basic Game \& Server Settings", make sure you select the game Urban
+Terror, enter the public IP of the server (\texttt{xx.yy.zz.tt:27960} -- see
+\S\ref{sub:b3:apache}).  The B3 status url is
+\url{http://myurtserver.domain.com/status.xml}
+
+Once everything is done, a file \texttt{config/statsconfig.php} is created. 
+Ensure this file has the permissions \texttt{750}. 
+You should now go to the url\\
+\url{http://myurtserver.domain.com/stats/config/install_award_idents.php} to
+setup the medals etc. (actually, you should do it every time you experience a
+trouble with awards). You can now delete the \texttt{install} directory and
+enjoy XLRStats at \url{http://myurtserver.domain.com/stats/}. 
+
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% eof
+%
+% Local Variables:
+% fill-column: 80
+% mode: latex
+% mode: flyspell
+% mode: auto-fill
+% End:

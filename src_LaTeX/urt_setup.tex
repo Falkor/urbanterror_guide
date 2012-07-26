@@ -1,0 +1,213 @@
+%=======================================================================
+% File         : urt_setup.tex
+% Author(s)    : Sebastien VARRETTE <Sebastien.Varrette@uni.lu>
+% Creation     : 06 Jul 2009
+% Time-stamp:    <Thu 2012-07-26 11:39 svarrette>
+%  
+%   Copyright (c) 2009 Sebastien Varrette. 
+%
+% Licence: Creative Commons Attribution-Noncommercial-Share Alike 2.0 France
+%
+% You are free:
+%   - to Share:  to copy, distribute and transmit the work
+%   - to Remix: to adapt the work
+%
+% Under the following conditions:
+%   - Attribution : You must attribute the work in the manner specified by the
+%                   author or licensor (but  not in any way that suggests that
+%                   they endorse you or your use of the work).  
+%   - Noncommercial:  You may not use this work for commercial purposes.
+%   - Share Alike: If you alter, transform, or build upon this work, you may
+%                  distribute the resulting work only under the same or similar
+%                  license to this one. 
+%
+% With the understanding that:
+%   - Waiver: Any of the above conditions can be waived if you get permission from
+%             the copyright holder. 
+%   - Other Rights: In no way are any of the following rights affected by the
+%                   license:  
+%                    * Your fair dealing or fair use rights;
+%                    * Apart from the remix rights granted under this license,
+%                      the author's moral rights; 
+%                     * Rights other persons may have either in the work itself
+%                       or in how the work is used, such as publicity or privacy
+%                       rights. 
+%   - Notice:  For any reuse or distribution, you must make clear to others the
+%              license terms of this work. The best way to do this is with a
+%              link to this web page. 
+%=======================================================================
+
+\documentclass[11pt,twoside,a4paper]{article}
+%--- Package insertion ---
+\usepackage{ae,a4,url}
+\usepackage[T1]{fontenc}
+\usepackage{epsfig}
+%\usepackage{hevea}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{amsmath, amsthm}
+\usepackage{amsfonts,amssymb} % permet la definition des ensembles
+\usepackage{float}
+\usepackage{acronym}             % for acronyms
+\usepackage{multirow}             
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Versionning with day and time
+%%%%%%%%%%%%%%
+% months
+\def\ftoday{\number\day\space
+ \ifcase\month\or
+ january\or february\or march\or april\or may\or june\or
+ july\or august\or september\or october\or november\or december\fi
+ \space\number\year}
+% \isodayandtime to get current date and time
+\begingroup
+\count0=\time \divide\count0by60 % Hour
+\count2=\count0 \multiply\count2by-60 \advance\count2by\time% Min
+\def\2#1{\ifnum#1<10 0\fi\the#1}
+\xdef\isodayandtime{\the\year-\2\month-\2\day\space\2{\count0}:%sec
+\2{\count2}}
+\endgroup
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Code Listings
+%%%%%%%%%%%%%%
+\usepackage[usenames]{color}
+\usepackage{xspace}
+\usepackage{listings}
+\definecolor{bcode}{rgb}{0.9,0.9,0.9} % font color for the listings
+% default style
+\lstset{numbers=left,numberstyle=\tiny,stepnumber=3,firstnumber=1,language=C++,basicstyle=\small,columns=flexible,backgroundcolor=\color{bcode},showstringspaces=false,escapeinside={/*@}{@*/}}
+% specific styles
+\lstdefinestyle{filecontent}
+{language=sh,emph={remoteSite,mySite,remoteserver,password_remoteSite,remoteSiteID},emphstyle=\itshape,numbers=none,commentstyle={},columns=flexible}
+\lstdefinestyle{command}
+{language=sh,emph={user@host,root@host},emphstyle=\textbf,numbers=none,commentstyle={},columns=flexible}
+\lstdefinestyle{urtcfg}
+{language=sh,emph={sets,set},emphstyle=\textbf,morecomment=[l]{//},numbers=none,columns=flexible}
+\lstdefinestyle{apachecfg}
+{language=sh,emph={NameVirtualHost,ServerAdmin,ServerName,Directory,VirtualHost,IfModule},emphstyle=\textbf,basicstyle=\footnotesize,numbers=none}
+
+\newcommand{\mybox}  [1]{\colorbox{bcode}{\makebox[\linewidth][l]{#1}}}
+\newcommand{\prompt} [5]{{\small \mybox{\texttt{[#1@#2]}#3\texttt{#4 #5}}}}
+\newcommand{\cmd}    [1]{{\small \mybox{~~\texttt{#1}}}}
+\newcommand{\cmdres} [1]{{\small \mybox{~~#1}}}
+\newcommand{\install}[1]{\texttt{apt-get install #1}}
+\newcommand{\promptRS}[2]{\prompt{root}{server}{#1}{\#}{#2}}
+\newcommand{\promptUS}[2]{\prompt{user}{server}{#1}{\$}{#2}}
+\newcommand{\promptRH}[2]{\prompt{root}{host}{#1}{\#}{#2}}
+\newcommand{\promptUH}[2]{\prompt{user}{host}{#1}{\$}{#2}}
+
+\newcommand{\begginstall}{\texttt{\$B3\_EGG\_INSTALLDIR}}
+\newcommand{\bhome}{\texttt{\$B3\_HOMEDIR}}
+\newcommand{\bconf}{\texttt{\$B3\_CONFDIR}}
+\newcommand{\bextplugins}{\texttt{\$B3\_EXTPLUGINSDIR}}
+
+
+% Logos 
+\newcommand{\windows}{\includegraphics[height=1em]{Images/logo_windows_small.jpg}}
+\newcommand{\linux}  {\includegraphics[height=1em]{Images/logo_linux_small.jpg}}
+\newcommand{\macosx} {\includegraphics[height=1em]{Images/logo_apple_small.jpg}}
+
+% separators
+\newcommand{\setitemsep}{\setlength{\itemsep}{-0.3ex}}
+
+
+\bibliographystyle{plain}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{
+  {\rule{\textwidth}{1mm}}\\[1em]
+  \textsc{Urban Terror [Server] Guide}\\[0.75em]
+  {\rule{\textwidth}{1mm}}  
+}
+\author{Sebastien Varrette\\ {\small \url{Sebastien.Varrette@uni.lu}}}
+
+\date{Version 0.3.0-b8\thanks{Draft version. Compiled time: \isodayandtime}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  This tutorial details the configuration of a Linux server for Urban Terror
+  (UrT~\cite{urt}), a free multiplayer first person shooter (FPS) based on the
+  Quake 3 engine~\cite{ioq3}.  Urban Terror is very similar to CounterStrike and
+  can be described as a Hollywood tactical shooter. Yet UrT is cross-platform
+  meaning the software package exists for Windows, Linux and Mac OS X.
+
+  Whereas everybody can start a server from the client software, such approach
+  does not authorize votes during the game, or statistics.  Consequently, it is
+  better to setup the server on a dedicated machine, as proposed in this document.
+  In particular, apart from the UrT server setup, this tutorial details the
+  installation of BigBrotherBot (B3)~\cite{b3}, a complete and total server
+  administration package for online games (including UrT) and various plugins (for
+  player statistics etc.).
+
+  The latest version of this tutorial (together with the \LaTeX\ sources of the
+  document) are freely available on
+  \href{https://github.com/Falkor/urbanterror_guide}{GitHub} at the following
+  address:
+  \begin{center}
+       \url{https://github.com/Falkor/urbanterror_guide}.
+  \end{center}
+\end{abstract}
+
+\clearpage
+~\vfill
+\input{_licence}
+\clearpage
+
+\tableofcontents
+\clearpage
+
+
+%==========================
+\section{Introduction}
+\label{sec:intro}
+\input{_intro}
+
+
+%==========================
+\section{Client software}
+\label{sec:urt_client}
+\input{_client}
+
+
+%========================================================
+\section{Linux server installation and configuration}
+\label{sec:urt_server}
+\input{_server}
+
+%============================================================
+\section{Big Brother Bot installation and configuration}
+\label{sec:b3}
+\input{_b3}
+
+
+\clearpage
+\appendix
+
+%====================
+\section{Appendix}
+\label{sec:anx}
+\input{_appendix}
+
+
+%============================== Bibliography ==================================
+\bibliography{biblio.bib}
+
+\end{document}
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% eof
+%
+% Local Variables:
+% fill-column: 80
+% mode: latex
+% mode: auto-fill
+% mode: flyspell
+% End:
