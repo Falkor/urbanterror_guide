@@ -1,68 +1,90 @@
-##################################################################################
-# Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Creation : 26 Jul 2012
-# Time-stamp: <Thu 2012-07-26 11:51 svarrette>
+####################################################################################
+# Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
+# Time-stamp: <Fri 2014-03-07 15:05 svarrette>
+#     __  __       _         __ _ _       
+#    |  \/  | __ _| | _____ / _(_) | ___  
+#    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
+#    | |  | | (_| |   <  __/  _| | |  __/ 
+#    |_|  |_|\__,_|_|\_\___|_| |_|_|\___| 
 #
 # Copyright (c) 2012 Sebastien Varrette <Sebastien.Varrette@uni.lu>
-#               http://varrette.gforge.uni.lu
-# $Id$ 
+# .             http://varrette.gforge.uni.lu
 #
-# Available Commands  
-# ------------------
-# make           : Compile files, binaries are generated in the current directory  
-# make force     : Force the complete re-compilation, even if not needed 
-# make clean     : Remove backup files (*~) and other generated files        
+####################################################################################
 #
-############################## Variables Declarations ############################
+############################## Variables Declarations ##############################
 SHELL = /bin/bash
+
+UNAME = $(shell uname)
+
+# Some directories
+SUPER_DIR   = $(shell basename `pwd`)
 
 # Directory hosting the LaTeX sources
 LATEX_SRCDIR = src_LaTeX
 URT_GUIDE    = $(LATEX_SRCDIR)/urt_setup.pdf
 
-# Gitflow stuff for release management
-GRB             = $(shell which grb)
-GITFLOW         = $(shell which git-flow)
+# Git stuff management
+GITFLOW      = $(shell which git-flow)
 LAST_TAG_COMMIT = $(shell git rev-list --tags --max-count=1)
-LAST_TAG        = $(shell git describe --tags $(LAST_TAG_COMMIT) )
-TAG_PREFIX      = "urbanterror_guide-v"
+LAST_TAG = $(shell git describe --tags $(LAST_TAG_COMMIT) )
+TAG_PREFIX = "v"
+GITFLOW_BR_MASTER= production
+GITFLOW_BR_DEVELOP=master
 
-VERSION  = $(shell head VERSION)
+VERSION  = $(shell [ -f VERSION ] && head VERSION || echo "0.0.1")
 # OR try to guess directly from the last git tag
 #VERSION    = $(shell  git describe --tags $(LAST_TAG_COMMIT) | sed "s/^$(TAG_PREFIX)//")
-MAJOR    = $(shell echo $(VERSION) | sed "s/^\([0-9]*\).*/\1/")
-MINOR    = $(shell echo $(VERSION) | sed "s/[0-9]*\.\([0-9]*\).*/\1/")
-PATCH    = $(shell echo $(VERSION) | sed "s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/")
+MAJOR      = $(shell echo $(VERSION) | sed "s/^\([0-9]*\).*/\1/")
+MINOR      = $(shell echo $(VERSION) | sed "s/[0-9]*\.\([0-9]*\).*/\1/")
+PATCH      = $(shell echo $(VERSION) | sed "s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/")
 # total number of commits 		
-BUILD    = $(shell git log --oneline | wc -l | sed -e "s/[ \t]*//g")
+BUILD      = $(shell git log --oneline | wc -l | sed -e "s/[ \t]*//g")
+
+#REVISION   = $(shell git rev-list $(LAST_TAG).. --count)
+#ROOTDIR    = $(shell git rev-parse --show-toplevel)
 NEXT_MAJOR_VERSION = $(shell expr $(MAJOR) + 1).0.0-b$(BUILD)
 NEXT_MINOR_VERSION = $(MAJOR).$(shell expr $(MINOR) + 1).0-b$(BUILD)
 NEXT_PATCH_VERSION = $(MAJOR).$(MINOR).$(shell expr $(PATCH) + 1)-b$(BUILD)
 
-.PHONY: all release setup start_bump_major start_bump_minor start_bump_patch versioninfo  
+### Main variables
+
+.PHONY: all archive clean help release setup start_bump_major start_bump_minor start_bump_patch test versioninfo 
+
 ############################### Now starting rules ################################
+# Required rule : what's to be done each time 
 all: 
 	@$(MAKE) -C $(LATEX_SRCDIR)/
 	@echo ""
 	@echo "=> the Urbanterror guide has been generated in $(LATEX_SRCDIR)/"
-	@[ -f "$(URT_GUIDE)" ] && ln -s $(URT_GUIDE) .
-	@echo "A symbolic link has been created in this directory"
+	@[ -h "$(URT_GUIDE)" ] && ln -s $(URT_GUIDE) . || true
 
-ifeq ($(GRB),)
-setup: 
-	@echo "Unable to find the 'grb' binary. Install it to setup your git repository."
-	@echo "See https://github.com/webmat/git_remote_branch/ for more details"
-else 
+# Test values of variables - for debug purposes  
+test:
+	@echo "--- Compilation commands --- "
+	@echo "GITFLOW      -> '$(GITFLOW)'"
+	@echo "--- Directories --- "
+	@echo "SUPER_DIR    -> '$(SUPER_DIR)'"
+	@echo ""
+	@echo "Consider running 'make versioninfo' to get info on git versionning variables"
+
+############################### Archiving ################################
+archive: clean
+	tar -C ../ -cvzf ../$(SUPER_DIR)-$(VERSION).tar.gz --exclude ".svn" --exclude ".git"  --exclude "*~" --exclude ".DS_Store" $(SUPER_DIR)/
+
+############################### Git Bootstrapping rules ################################
 setup:
-	grb grab production
-	git config gitflow.branch.master     production
-	git config gitflow.branch.develop    master
+	git fetch origin
+	git branch --set-upstream $(GITFLOW_BR_MASTER) origin/$(GITFLOW_BR_MASTER)
+	git config gitflow.branch.master     $(GITFLOW_BR_MASTER)
+	git config gitflow.branch.develop    $(GITFLOW_BR_DEVELOP)
 	git config gitflow.prefix.feature    feature/
 	git config gitflow.prefix.release    release/
 	git config gitflow.prefix.hotfix     hotfix/
 	git config gitflow.prefix.support    support/
 	git config gitflow.prefix.versiontag $(TAG_PREFIX)
-endif
+	git submodule init
+	git submodule update
 
 versioninfo:
 	@echo "Current version: $(VERSION)"
@@ -79,7 +101,7 @@ start_bump_patch start_bump_minor start_bump_major release:
 	@echo "Unable to find git-flow on your system. "
 	@echo "See https://github.com/nvie/gitflow for installation details"
 else
-start_bump_patch:
+start_bump_patch: clean
 	@echo "Start the patch release of the repository from $(VERSION) to $(NEXT_PATCH_VERSION)"
 	git pull origin
 	git flow release start $(NEXT_PATCH_VERSION)
@@ -88,7 +110,7 @@ start_bump_patch:
 	@echo "=> remember to update the version number in $(MAIN_TEX)"
 	@echo "=> run 'make release' once you finished the bump"
 
-start_bump_minor:
+start_bump_minor: clean
 	@echo "Start the minor release of the repository from $(VERSION) to $(NEXT_MINOR_VERSION)"
 	git pull origin
 	git flow release start $(NEXT_MINOR_VERSION)
@@ -97,7 +119,7 @@ start_bump_minor:
 	@echo "=> remember to update the version number in $(MAIN_TEX)"
 	@echo "=> run 'make release' once you finished the bump"
 
-start_bump_major:
+start_bump_major: clean
 	@echo "Start the major release of the repository from $(VERSION) to $(NEXT_MAJOR_VERSION)"
 	git pull origin
 	git flow release start $(NEXT_MAJOR_VERSION)
@@ -107,14 +129,45 @@ start_bump_major:
 	@echo "=> run 'make release' once you finished the bump"
 
 
-release: $(URT_GUIDE)
+release: $(URT_GUIDE) 
 	@cp $(URT_GUIDE) $(URT_GUIDE:%.pdf=%-v$(VERSION).pdf)
+	$(MAKE) clean
 	git flow release finish -s $(VERSION)
+	git checkout $(GITFLOW_BR_MASTER)
+	git push origin
+	git checkout $(GITFLOW_BR_DEVELOP)
+	git push origin
 	git push origin --tags
 endif
 
 
-%:
+# Clean option
+clean:
 	$(MAKE) -C $(LATEX_SRCDIR)/ $@
 
+# Upgrade the Git submodules etc. to the latest version
+upgrade: 
+	git submodule foreach 'git fetch origin; git checkout $(shell git rev-parse --abbrev-ref HEAD); git reset --hard origin/$(shell git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
 
+# # force recompilation
+# force :
+# 	@touch $(MAIN_TEX)
+# 	@$(MAKE)
+
+
+# print help message
+help :
+	@echo '+----------------------------------------------------------------------+'
+	@echo '|                        Available Commands                            |'
+	@echo '+----------------------------------------------------------------------+'
+	@echo '| make setup:   Initiate git-flow for your local copy of the repository|'
+	@echo '| make start_bump_{major,minor,patch}: start a new version release with|'
+	@echo '|               git-flow at a given level (major, minor or patch bump) |'
+	@echo '| make release: Finalize the release using git-flow                    |'
+	@echo '+----------------------------------------------------------------------+'
+
+$(URT_GUIDE):
+	$(MAKE) -C $(LATEX_SRCDIR)/
+
+%:
+	$(MAKE) -C $(LATEX_SRCDIR)/ $@
