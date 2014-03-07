@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Mar 2014-02-04 15:30 svarrette>
+# Time-stamp: <Fri 2014-03-07 14:43 svarrette>
 #     __  __       _         __ _ _       
 #    |  \/  | __ _| | _____ / _(_) | ___  
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -19,6 +19,10 @@ UNAME = $(shell uname)
 
 # Some directories
 SUPER_DIR   = $(shell basename `pwd`)
+
+# Directory hosting the LaTeX sources
+LATEX_SRCDIR = src_LaTeX
+URT_GUIDE    = $(LATEX_SRCDIR)/urt_setup.pdf
 
 # Git stuff management
 GITFLOW      = $(shell which git-flow)
@@ -50,6 +54,10 @@ NEXT_PATCH_VERSION = $(MAJOR).$(MINOR).$(shell expr $(PATCH) + 1)-b$(BUILD)
 ############################### Now starting rules ################################
 # Required rule : what's to be done each time 
 all: 
+	@$(MAKE) -C $(LATEX_SRCDIR)/
+	@echo ""
+	@echo "=> the Urbanterror guide has been generated in $(LATEX_SRCDIR)/"
+	@[ -h "$(URT_GUIDE)" ] && ln -s $(URT_GUIDE) . || true
 
 # Test values of variables - for debug purposes  
 test:
@@ -121,7 +129,9 @@ start_bump_major: clean
 	@echo "=> run 'make release' once you finished the bump"
 
 
-release: clean 
+release: $(URT_GUIDE) 
+	@cp $(URT_GUIDE) $(URT_GUIDE:%.pdf=%-v$(VERSION).pdf)
+	$(MAKE) clean
 	git flow release finish -s $(VERSION)
 	git checkout $(GITFLOW_BR_MASTER)
 	git push origin
@@ -133,11 +143,11 @@ endif
 
 # Clean option
 clean:
-	@echo nothing to be cleaned for the moment
+	$(MAKE) -C $(LATEX_SRCDIR)/ $@
 
 # Upgrade the Git submodules etc. to the latest version
 upgrade: 
-	git submodule foreach 'git fetch origin; git checkout $(git rev-parse --abbrev-ref HEAD); git reset --hard origin/$(git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
+	git submodule foreach 'git fetch origin; git checkout $(shell git rev-parse --abbrev-ref HEAD); git reset --hard origin/$(shell git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
 
 # # force recompilation
 # force :
@@ -156,3 +166,5 @@ help :
 	@echo '| make release: Finalize the release using git-flow                    |'
 	@echo '+----------------------------------------------------------------------+'
 
+%:
+	$(MAKE) -C $(LATEX_SRCDIR)/ $@
