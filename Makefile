@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Fri 2014-03-07 14:43 svarrette>
+# Time-stamp: <Fri 2014-03-07 15:05 svarrette>
 #     __  __       _         __ _ _       
 #    |  \/  | __ _| | _____ / _(_) | ___  
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -165,6 +165,9 @@ help :
 	@echo '|               git-flow at a given level (major, minor or patch bump) |'
 	@echo '| make release: Finalize the release using git-flow                    |'
 	@echo '+----------------------------------------------------------------------+'
+
+$(URT_GUIDE):
+	$(MAKE) -C $(LATEX_SRCDIR)/
 
 %:
 	$(MAKE) -C $(LATEX_SRCDIR)/ $@
